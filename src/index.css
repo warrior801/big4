@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+@import '@fontsource/archivo/400.css';
+@import '@fontsource/archivo/700.css';
+@import '@fontsource/archivo/900.css';
+
+/* Colors pulled from the icon: dark tile, plate red, steel hub. */
+@theme {
+  --font-sans: 'Archivo', system-ui, sans-serif;
+  --color-ink: #14161a;
+  --color-panel: #1e2127;
+  --color-line: #2c3038;
+  --color-plate: #d62828;
+  --color-plate-dark: #a81e1e;
+  --color-steel: #9aa1ab;
+  --color-chalk: #f4f4f2;
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-chalk);
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+}
