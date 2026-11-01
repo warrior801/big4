@@ -2,15 +2,19 @@ import { useEffect, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { STR_TABLES, missingTables } from './lib/tables';
-import { ensureSeeded, type SeedResult } from './lib/seed';
+import { downloadBasics } from './lib/download';
 import PlateCalc from './PlateCalc';
+import Today from './Today';
+import { BigButton } from './ui/Overlay';
 
-// Step 1 placeholder: proves install, offline open, and the Supabase login.
-// The real screens (Today, Tracker, ...) replace this from step 4 on.
+type Tab = 'today' | 'plates' | 'me';
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [checking, setChecking] = useState(true);
   const [online, setOnline] = useState(navigator.onLine);
+  const [tab, setTab] = useState<Tab>('today');
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -29,57 +33,64 @@ export default function App() {
     };
   }, []);
 
-  return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center gap-8 py-10">
-      <div className="flex flex-col items-center gap-3">
-        <img src="/icon-192.png" alt="" className="h-24 w-24" />
-        <h1 className="text-4xl font-black tracking-wide">BIG4</h1>
-        <p className={`text-sm ${online ? 'text-steel' : 'text-plate'}`}>
-          {online ? 'Online' : 'No signal: working offline'}
-        </p>
-      </div>
+  // With signal: make sure the lifts exist and copy them to the phone.
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (userId && online) downloadBasics().then(setDownloadError);
+  }, [userId, online]);
 
-      {checking ? null : session ? <SignedIn session={session} online={online} /> : <SignIn online={online} />}
-      {session && <PlateCalc />}
-    </main>
-  );
-}
+  if (checking) return null;
+  if (!session) return <SignIn online={online} />;
 
-function SignedIn({ session, online }: { session: Session; online: boolean }) {
   return (
-    <div className="flex w-full flex-col items-center gap-4 rounded-2xl border border-line bg-panel p-6 text-center">
-      <p className="text-steel">Connected as</p>
-      <p className="font-bold break-all">{session.user.email}</p>
-      <DatabaseCheck online={online} />
-      <LiftsCheck online={online} />
-      <button
-        onClick={() => supabase.auth.signOut()}
-        className="mt-2 rounded-xl border border-line px-5 py-3 text-steel active:bg-line"
+    <div className="mx-auto max-w-xl pb-28">
+      {!online && <p className="pt-3 text-center text-lg font-black tracking-widest text-plate">NO SIGNAL · SAVING ON THE PHONE</p>}
+      {downloadError && <p className="pt-3 text-center text-lg font-black text-plate">Download problem: {downloadError}</p>}
+
+      {tab === 'today' && <Today userId={session.user.id} />}
+      {tab === 'plates' && <PlateCalc />}
+      {tab === 'me' && <Me session={session} online={online} />}
+
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-line bg-ink"
+        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
       >
-        Sign out
-      </button>
+        <div className="mx-auto grid max-w-xl grid-cols-3">
+          {(['today', 'plates', 'me'] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`py-4 text-xl font-black tracking-widest uppercase ${tab === t ? 'text-plate' : 'text-steel'}`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
 
-// Step 3 check: the eight lifts are on the account (added on first sign-in).
-function LiftsCheck({ online }: { online: boolean }) {
-  const [result, setResult] = useState<SeedResult | null>(null);
-
-  useEffect(() => {
-    if (online) ensureSeeded().then(setResult);
-  }, [online]);
-
-  if (!online || result === null) return null;
-  if (result.error) return <p className="text-sm text-plate">Lifts: {result.error}</p>;
+function Me({ session, online }: { session: Session; online: boolean }) {
   return (
-    <p className="text-sm font-bold">
-      Lifts: {result.lifts} of 8 ready{result.added > 0 && <span className="font-normal text-steel"> ({result.added} just added)</span>}
-    </p>
+    <div className="pb-6">
+      <header className="pt-6 pb-4">
+        <img src="/icon-192.png" alt="" className="h-24 w-24" />
+        <h1 className="mt-3 text-[15vw] leading-[0.9] font-black tracking-tight sm:text-8xl">BIG4</h1>
+      </header>
+      <p className="text-xl font-black tracking-widest text-steel">SIGNED IN AS</p>
+      <p className="text-2xl font-black break-all">{session.user.email}</p>
+      <div className="mt-4">
+        <DatabaseCheck online={online} />
+      </div>
+      <BigButton tone="ghost" onClick={() => void supabase.auth.signOut()} className="mt-8 w-full">
+        Sign out
+      </BigButton>
+    </div>
   );
 }
 
-// Step 2 check: are all twelve str_ tables in Supabase?
+// Are all twelve str_ tables in Supabase?
 function DatabaseCheck({ online }: { online: boolean }) {
   const [missing, setMissing] = useState<string[] | null>(null);
 
@@ -87,14 +98,14 @@ function DatabaseCheck({ online }: { online: boolean }) {
     if (online) missingTables().then(setMissing);
   }, [online]);
 
-  if (!online) return <p className="text-sm text-steel">Database: check needs signal</p>;
-  if (missing === null) return <p className="text-sm text-steel">Database: checking…</p>;
+  if (!online) return <p className="text-xl font-black text-steel">DATABASE CHECK NEEDS SIGNAL</p>;
+  if (missing === null) return <p className="text-xl font-black text-steel">CHECKING DATABASE…</p>;
 
   const ready = STR_TABLES.length - missing.length;
   return (
-    <div className="text-sm">
-      <p className={missing.length ? 'font-bold text-plate' : 'font-bold text-chalk'}>
-        Database: {ready} of {STR_TABLES.length} tables ready
+    <div>
+      <p className={`text-xl font-black ${missing.length ? 'text-plate' : ''}`}>
+        DATABASE: {ready} OF {STR_TABLES.length} TABLES READY
       </p>
       {missing.length > 0 && <p className="mt-1 break-all text-steel">Missing: {missing.join(', ')}</p>}
     </div>
@@ -117,34 +128,40 @@ function SignIn({ online }: { online: boolean }) {
   }
 
   return (
-    <form onSubmit={submit} className="flex w-full flex-col gap-3 rounded-2xl border border-line bg-panel p-6">
-      <p className="text-center text-steel">Same login as Ironframe</p>
-      <input
-        type="email"
-        autoComplete="username"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="rounded-xl border border-line bg-ink px-4 py-3 text-base outline-none focus:border-plate"
-        required
-      />
-      <input
-        type="password"
-        autoComplete="current-password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="rounded-xl border border-line bg-ink px-4 py-3 text-base outline-none focus:border-plate"
-        required
-      />
-      {error && <p className="text-sm text-plate">{error}</p>}
-      <button
-        type="submit"
-        disabled={busy || !online}
-        className="mt-1 rounded-xl bg-plate py-3 font-bold active:bg-plate-dark disabled:opacity-50"
-      >
-        {!online ? 'Sign in needs signal' : busy ? 'Signing in…' : 'Sign in'}
-      </button>
-    </form>
+    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 py-10">
+      <div className="flex flex-col items-center gap-3">
+        <img src="/icon-192.png" alt="" className="h-28 w-28" />
+        <h1 className="text-7xl font-black tracking-tight">BIG4</h1>
+      </div>
+      <form onSubmit={submit} className="flex flex-col gap-3">
+        <input
+          type="email"
+          autoComplete="username"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="rounded-2xl border-2 border-line bg-panel px-4 py-4 text-xl font-bold outline-none focus:border-plate"
+          required
+        />
+        <input
+          type="password"
+          autoComplete="current-password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="rounded-2xl border-2 border-line bg-panel px-4 py-4 text-xl font-bold outline-none focus:border-plate"
+          required
+        />
+        {error && <p className="text-lg font-bold text-plate">{error}</p>}
+        <button
+          type="submit"
+          disabled={busy || !online}
+          className="min-h-16 rounded-2xl bg-plate text-2xl font-black tracking-wide uppercase active:bg-plate-dark disabled:opacity-50"
+        >
+          {!online ? 'Sign in needs signal' : busy ? 'Signing in…' : 'Sign in'}
+        </button>
+        <p className="text-center text-lg font-bold text-steel">Same login as Ironframe</p>
+      </form>
+    </main>
   );
 }

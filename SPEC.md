@@ -123,7 +123,8 @@ Six screens, phone layout first. On desktop the same screens sit side by side.
 The gym screen. Opens straight to the next workout.
 
 - Each lift shows its full ramp (bar, 60–100%) with the weight and the plates per side for every set. Example: 185 lb = 45 + 25 per side; 215 lb = 45 + 35 + 5 per side. Plates load heaviest first.
-- One tap logs a set as done; long-press to enter reps actually hit (0–5).
+- Logging (decided, replaces long-press): two big buttons on the plates screen, **DONE 5** and **MISSED**; Missed opens a reps picker. A top set after a reset gets an "as many as you can" counter instead.
+- Before day-one calibration exists (step 6), a lift with no top set shows **SET START WEIGHT**, which opens the weight picker.
 - Rest timer starts automatically after each logged set. Default 3 min for ramp sets, 5 min after the top set, both adjustable.
 - **Big timer:** the rest timer fills the whole screen with numbers readable from the bench, with the next set's lift and weight underneath and a "skip rest" button. In the last 3 seconds the screen flashes plate red, then shows "Lift." Tap anywhere to go back to the workout.
   - **Sideways:** the timer reshapes and gets bigger when the phone is turned. A web app can't force an iPhone sideways, so this needs the phone's rotation lock off; with it on, the timer is still full-screen standing up.

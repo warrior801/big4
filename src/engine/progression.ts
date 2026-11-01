@@ -21,7 +21,7 @@ export type Outcome = {
   event: 'up' | 'repeat' | 'reset' | 'reset-stalled';
 };
 
-export const isInReset = (s: LiftState) => s.resetCount > 0;
+export const isInReset = (s: Pick<LiftState, 'resetCount'>) => s.resetCount > 0;
 
 // sessionNumber: this lift's sessions since day-one calibration, counting this one (1, 2, 3...).
 export function afterTopSet(

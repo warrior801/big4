@@ -1,73 +1,65 @@
 import { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import program from './program/program.json';
-import { roundDown, sideLabel, type Equipment } from './engine/plates';
 import { buildRamp, rampFor } from './engine/ramp';
+import { db } from './lib/db';
+import { equipmentOf } from './lib/store';
+import { BigButton } from './ui/Overlay';
+import PlatesScreen from './ui/PlatesScreen';
+import WeightPicker from './ui/WeightPicker';
 
-// Step 3 phone test: type a top set, see the ramp and the plates for every set.
-// Folds into the Today screen in step 4.
+// Pick a lift, pick a weight, see the plates for the whole ramp.
 const MAIN = program.lifts.filter((l) => l.kind === 'main');
 
 export default function PlateCalc() {
-  const [slug, setSlug] = useState('squat');
-  const [top, setTop] = useState('135');
-  const [fractionals, setFractionals] = useState(false);
-
-  const eq: Equipment = {
-    barLb: program.equipment.barLb,
-    platesLb: fractionals ? [...program.equipment.platesLb, 1.25] : program.equipment.platesLb,
-  };
-  const typed = Number(top);
-  const valid = Number.isFinite(typed) && typed >= eq.barLb && typed <= 1000;
-  const ramp = valid ? buildRamp(typed, rampFor(slug), eq) : [];
-  const rounded = valid && roundDown(typed, eq) !== typed;
+  const settings = useLiveQuery(() => db.settings.toArray().then((r) => r[0]), []);
+  const eq = equipmentOf(settings);
+  const [lift, setLift] = useState<(typeof MAIN)[number] | null>(null);
+  const [weight, setWeight] = useState<number | null>(null);
+  const [last, setLast] = useState(135);
 
   return (
-    <section className="w-full rounded-2xl border border-line bg-panel p-5">
-      <h2 className="mb-4 text-lg font-black tracking-wide">Plate calculator</h2>
-
-      <div className="mb-3 grid grid-cols-4 gap-2">
+    <div className="pb-6">
+      <header className="pt-6 pb-4">
+        <h1 className="text-[15vw] leading-[0.9] font-black tracking-tight sm:text-8xl">PLATES</h1>
+        <p className="mt-1 text-xl font-black text-steel">PICK A LIFT, PICK A WEIGHT.</p>
+      </header>
+      <div className="grid grid-cols-2 gap-3">
         {MAIN.map((l) => (
-          <button
-            key={l.slug}
-            onClick={() => setSlug(l.slug)}
-            className={`rounded-lg py-2 text-sm font-bold ${slug === l.slug ? 'bg-plate' : 'border border-line text-steel'}`}
-          >
-            {l.slug === 'deadlift' ? 'Dead' : l.name.split(' ')[0]}
-          </button>
+          <BigButton key={l.slug} tone="ghost" onClick={() => setLift(l)} className="min-h-32 text-3xl">
+            {l.name}
+          </BigButton>
         ))}
       </div>
+      <p className="mt-6 text-lg font-bold text-steel">
+        Plates on hand: {eq.platesLb.join(', ')}. Bar {eq.barLb}. Change these in Settings (coming in step 10).
+      </p>
 
-      <label className="mb-2 flex items-center gap-3">
-        <span className="text-steel">Top set</span>
-        <input
-          inputMode="decimal"
-          value={top}
-          onChange={(e) => setTop(e.target.value)}
-          className="w-24 rounded-xl border border-line bg-ink px-3 py-2 text-right text-xl font-bold outline-none focus:border-plate"
+      {lift && weight === null && (
+        <WeightPicker
+          title={`${lift.name}: top set`}
+          initial={last}
+          step={2 * Math.min(...eq.platesLb)}
+          min={eq.barLb}
+          onClose={() => setLift(null)}
+          onDone={(lb) => {
+            setLast(lb);
+            setWeight(lb);
+          }}
         />
-        <span className="text-steel">lb</span>
-      </label>
-
-      <label className="mb-4 flex items-center gap-2 text-sm text-steel">
-        <input type="checkbox" checked={fractionals} onChange={(e) => setFractionals(e.target.checked)} />
-        I have 1.25 lb plates
-      </label>
-
-      {!valid && <p className="text-sm text-plate">Enter a weight of at least {eq.barLb} lb.</p>}
-      {rounded && <p className="mb-2 text-sm text-plate">Can't load {typed} exactly; using {roundDown(typed, eq)}.</p>}
-
-      <ul className="divide-y divide-line">
-        {ramp.map((s) => (
-          <li key={s.pct} className={`flex items-baseline justify-between py-2 ${s.isTop ? 'text-chalk' : 'text-steel'}`}>
-            <span className="w-14 text-xs">{s.pct === 0 ? 'Bar' : `${s.pct}%`}</span>
-            <span className={`w-24 font-bold ${s.isTop ? 'text-xl' : ''}`}>
-              {s.lb} <span className="text-xs font-normal">x {s.reps}</span>
-            </span>
-            <span className="flex-1 text-right text-sm">{sideLabel(s.plates)}</span>
-          </li>
-        ))}
-      </ul>
-      {ramp.length > 0 && <p className="mt-2 text-xs text-steel">Plates are per side.</p>}
-    </section>
+      )}
+      {lift && weight !== null && (
+        <PlatesScreen
+          liftName={lift.name}
+          sets={buildRamp(weight, rampFor(lift.slug), eq)}
+          startIndex={99}
+          eq={eq}
+          onClose={() => {
+            setWeight(null);
+            setLift(null);
+          }}
+        />
+      )}
+    </div>
   );
 }

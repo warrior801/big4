@@ -1,0 +1,31 @@
+{
+  "_about": "Prep before the bar and stretches after, from SPEC.md. Names and counts only; how-to text comes with the technique guide (step 9), in Cecil's words. holdSec adds a tap-to-start hold timer.",
+  "general": [{ "id": "general", "name": "Bike, rower, or incline walk", "dose": "5 min, light sweat", "holdSec": 300 }],
+  "byLift": {
+    "squat": [
+      { "id": "ankle-rocks", "name": "Ankle rocks to a wall", "dose": "10 per side" },
+      { "id": "lunge-reach", "name": "Hip flexor lunge, overhead reach", "dose": "5 per side" },
+      { "id": "pause-squat", "name": "Bodyweight squat, 3 s pause", "dose": "8 reps" },
+      { "id": "shoulder-stretch", "name": "Horn's shoulder stretch", "dose": "30 s per side", "holdSec": 30 }
+    ],
+    "upper": [
+      { "id": "pull-aparts", "name": "Band pull-aparts", "dose": "15 reps" },
+      { "id": "pass-throughs", "name": "Band pass-throughs", "dose": "10 reps" },
+      { "id": "scap-pushups", "name": "Scap push-ups", "dose": "10 reps" }
+    ],
+    "deadlift": [
+      { "id": "hip-hinge", "name": "Dowel hip hinge", "dose": "10 reps" },
+      { "id": "cat-cow", "name": "Cat-cow", "dose": "8 reps" },
+      { "id": "glute-bridge", "name": "Glute bridge", "dose": "10 reps" }
+    ],
+    "pull": [{ "id": "dead-hang", "name": "Dead hang", "dose": "20 s", "holdSec": 20 }]
+  },
+  "roundsNote": "Lift prep: 2 easy rounds.",
+  "after": [
+    { "id": "couch", "name": "Couch stretch", "dose": "40 s per side", "holdSec": 40 },
+    { "id": "figure-4", "name": "Figure-4 glute stretch", "dose": "40 s per side", "holdSec": 40 },
+    { "id": "lat", "name": "Lat stretch on a rack upright", "dose": "40 s per side", "holdSec": 40 },
+    { "id": "doorway", "name": "Doorway chest stretch", "dose": "40 s", "holdSec": 40 },
+    { "id": "calf", "name": "Calf stretch on a plate edge", "dose": "40 s per side", "holdSec": 40 }
+  ]
+}

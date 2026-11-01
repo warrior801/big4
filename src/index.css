@@ -15,6 +15,12 @@
   --color-chalk: #f4f4f2;
 }
 
+/* Rest timer's last 3 seconds: hard red/black flash. */
+@keyframes flash {
+  0% { background: var(--color-plate); }
+  50% { background: var(--color-ink); }
+}
+
 html,
 body {
   background: var(--color-ink);

@@ -17,7 +17,7 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any', // the rest timer gets bigger sideways
         background_color: '#14161a',
         theme_color: '#14161a',
         icons: [
