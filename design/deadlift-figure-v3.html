@@ -1,0 +1,130 @@
+<!doctype html>
+<!-- Design draft, not part of the app build. Deadlift technique figure, version 3 (2026-10-31):
+     bald lifter, red tank, shaped limbs, joint caps, bar path over mid-foot, flat-back guide.
+     Open this file in a browser to view. Appearance work continues 2026-11-01, then it moves
+     into the app as a sideways screen (step 9, pulled forward). -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Deadlift figure</title>
+<style>
+  body { margin: 0; background: #14161a; color: #f4f4f2; font-family: system-ui, sans-serif; }
+  .card { max-width: 420px; margin: 16px auto; padding: 16px; }
+  button { background: transparent; color: #f4f4f2; border: 1px solid #3a3f48; border-radius: 8px; padding: 10px; font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;">
+    <span style="font-size:22px;font-weight:700;letter-spacing:1px;">DEADLIFT</span>
+    <span id="phase" style="color:#d62828;font-size:16px;font-weight:700;letter-spacing:2px;">SETUP</span>
+  </div>
+  <svg viewBox="50 20 280 395" style="width:100%;display:block;" role="img" aria-label="Deadlift form figure">
+    <rect x="50" y="400" width="280" height="16" fill="#1e2127"/>
+    <line x1="50" y1="400" x2="330" y2="400" stroke="#3a3f48" stroke-width="3"/>
+    <line x1="212" y1="400" x2="212" y2="168" stroke="#d62828" stroke-width="2" stroke-dasharray="6 6" opacity="0.7"/>
+    <circle cx="212" cy="400" r="5" fill="#d62828"/>
+    <g><circle id="plate" r="45" fill="#8e1b1b" stroke="#14161a" stroke-width="2"/><circle id="plateIn" r="30" fill="none" stroke="#6e0e0e" stroke-width="3"/></g>
+    <g id="body"></g>
+    <line id="back" stroke="#ff4d4d" stroke-width="3" stroke-dasharray="4 5" stroke-linecap="round"/>
+  </svg>
+  <p id="cue" style="font-size:16px;font-weight:600;line-height:1.5;min-height:72px;margin:4px 0 12px;"></p>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;">
+    <button data-k="0">Setup</button><button data-k="1">Pull</button><button data-k="3">Lockout</button><button data-k="5">Down</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+    <button id="play">Pause</button><button id="slow">Slow motion: off</button>
+  </div>
+</div>
+<script>
+// Colors match the app (index.css): plate red on the dark tile.
+const SKIN='#c98e64',SHADE='#8f5d3d',LIGHT='#dba57d',TANK='#d62828',TANKD='#a81e1e',SHORTS='#2c3038',SHOE='#0b0b0b';
+const A=[205,388]; // ankle; bar stays over mid-foot at x=212
+// Hand-drawn key positions: setup, bar at knee, mid-thigh, lockout.
+const K=[
+ {knee:[234,300],hip:[120,285],sho:[218,238],hand:[212,355]},
+ {knee:[204,296],hip:[116,229],sho:[215,182],hand:[212,300]},
+ {knee:[208,294],hip:[168,198],sho:[222,103],hand:[214,221]},
+ {knee:[207,295],hip:[208,180],sho:[203,70],hand:[208,188]}
+];
+// [key position, seconds to reach it]: hold setup, pull, hold lockout, lower.
+const seq=[[0,0.8],[0,1.0],[1,0.7],[2,0.6],[3,0.8],[3,0.6],[2,0.6],[1,0.7],[0,0.5]];
+const cues={SETUP:'Bar over mid-foot. Shins touch the bar. Shoulders just in front of it. Back flat (red line), arms straight.',PULL:'Push the floor away. The bar drags up your shins and thighs, straight up over mid-foot. Hips and shoulders rise together, back angle holds.',LOCKOUT:'Hips and knees lock at the same time. Stand tall, chest up. Do not lean back.',DOWN:'Hips back first, bar slides down the thighs. Once it passes the knees, bend them.'};
+const phaseAt=i=>i<=1?'SETUP':i<=3?'PULL':i<=5?'LOCKOUT':'DOWN';
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1]],sub=(a,b)=>[a[0]-b[0],a[1]-b[1]],mul=(a,s)=>[a[0]*s,a[1]*s];
+const norm=v=>{const L=Math.hypot(v[0],v[1])||1;return[v[0]/L,v[1]/L]};
+const perp=v=>[-v[1],v[0]];
+const P=p=>p[0].toFixed(1)+' '+p[1].toFixed(1);
+// A tapered, curved limb from a to b. Flat ends; joint circles cover the seams.
+function limb(a,b,wa,wb,bulge,at=0.45){
+ const d=norm(sub(b,a)),n=perp(d),m=add(a,mul(sub(b,a),at));
+ const a1=add(a,mul(n,wa/2)),a2=sub(a,mul(n,wa/2)),b1=add(b,mul(n,wb/2)),b2=sub(b,mul(n,wb/2));
+ return `M${P(a1)} Q${P(add(m,mul(n,bulge)))} ${P(b1)} L${P(b2)} Q${P(sub(m,mul(n,bulge)))} ${P(a2)}Z`;
+}
+const path=(d,f)=>`<path d="${d}" fill="${f}"/>`;
+const stroke=(d,c,w)=>`<path d="${d}" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round"/>`;
+const line=(a,b,c,w)=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+const circ=(c,r,f)=>`<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${r}" fill="${f}"/>`;
+let t=0,playing=true,speed=1,last=performance.now();
+const total=seq.reduce((s,x)=>s+x[1],0);
+const lerp=(a,b,u)=>[a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u];
+const ease=u=>u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+const $=id=>document.getElementById(id);
+function pose(tt){
+ let acc=0;
+ for(let i=1;i<seq.length;i++){const d=seq[i][1];
+  if(tt<=acc+d){const u=ease((tt-acc)/d);const a=K[seq[i-1][0]],b=K[seq[i][0]];const p={};for(const k in a)p[k]=lerp(a[k],b[k],u);return[p,i];}
+  acc+=d;}
+ return[K[0],seq.length-1];
+}
+function draw(p,i){
+ const d=norm(sub(p.sho,p.hip));
+ let front=perp(d);if(front[0]<0)front=mul(front,-1);
+ const back=mul(front,-1);
+ const elbow=lerp(p.sho,p.hand,0.48);
+ const neck=add(p.sho,mul(d,10)),head=add(add(p.sho,mul(d,30)),mul(front,4));
+ const kn=perp(norm(sub(p.knee,p.hip))),kside=kn[0]>0?-1:1;
+ let s='';
+ s+=path(`M${A[0]-14} ${A[1]+4} Q${A[0]-16} ${A[1]-10} ${A[0]-2} ${A[1]-8} L${A[0]+36} ${A[1]-2} Q${A[0]+46} ${A[1]} ${A[0]+44} ${A[1]+8} L${A[0]-14} ${A[1]+8}Z`,SHOE);
+ s+=line([A[0]-12,A[1]+8],[A[0]+44,A[1]+8],'#f4f4f2',2.5);
+ s+=path(limb(p.knee,A,22,13,15,0.32),SKIN);
+ s+=circ(A,7,SKIN);
+ s+=path(limb(p.hip,p.knee,36,22,24,0.4),SKIN);
+ s+=circ(p.knee,11,SKIN);
+ s+=stroke(`M${P(lerp(p.hip,p.knee,0.55))} Q${P(add(lerp(p.hip,p.knee,0.75),mul(kn,7*kside)))} ${P(lerp(p.hip,p.knee,0.92))}`,SHADE,2);
+ s+=path(limb(p.hip,lerp(p.hip,p.knee,0.42),40,33,22,0.5),SHORTS);
+ s+=circ(add(p.hip,mul(back,8)),19,SHORTS);
+ const hb=add(p.hip,mul(back,17)),sb=add(p.sho,mul(back,15));
+ const hf=add(p.hip,mul(front,15)),waist=add(lerp(p.hip,p.sho,0.35),mul(front,14)),chest=add(lerp(p.hip,p.sho,0.72),mul(front,26)),sf=add(p.sho,mul(front,14));
+ s+=path(`M${P(hb)} L${P(sb)} Q${P(add(p.sho,mul(d,12)))} ${P(sf)} Q${P(chest)} ${P(waist)} Q${P(hf)} ${P(add(p.hip,mul(front,12)))} Q${P(add(p.hip,mul(d,-10)))} ${P(hb)}Z`,TANK);
+ s+=stroke(`M${P(add(lerp(p.hip,p.sho,0.85),mul(front,20)))} Q${P(add(lerp(p.hip,p.sho,0.7),mul(front,14)))} ${P(add(lerp(p.hip,p.sho,0.55),mul(front,18)))}`,TANKD,2.5);
+ s+=path(limb(lerp(p.hip,p.sho,0.06),lerp(p.hip,p.sho,0.16),36,36,0,0.5),'#0b0b0b');
+ s+=path(limb(p.sho,neck,20,18,0),SKIN);
+ s+=circ(head,16,SKIN);
+ s+=circ(add(add(head,mul(d,6)),mul(back,4)),6,LIGHT);
+ s+=circ(add(head,mul(back,3)),3.5,SHADE);
+ s+=circ(add(head,mul(front,15)),3,SKIN);
+ s+=path(limb(p.sho,elbow,22,16,15,0.45),SKIN);
+ s+=circ(elbow,8,SKIN);
+ s+=circ(p.sho,13,SKIN);
+ s+=stroke(`M${P(add(p.sho,mul(front,6)))} Q${P(add(lerp(p.sho,elbow,0.4),mul(front,9)))} ${P(add(elbow,mul(front,4)))}`,SHADE,2);
+ s+=path(limb(elbow,p.hand,16,11,11,0.35),SKIN);
+ s+=circ(p.hand,10,'#9aa1ab');
+ s+=circ(add(p.hand,[1,-2]),8,'#e8d9c8');
+ $('body').innerHTML=s;
+ ['plate','plateIn'].forEach(id=>{$(id).setAttribute('cx',p.hand[0]);$(id).setAttribute('cy',p.hand[1]);});
+ const ph=phaseAt(i),bl=$('back');
+ bl.setAttribute('opacity',ph==='SETUP'||ph==='PULL'?1:0);
+ const b1=add(hb,mul(back,7)),b2=add(sb,mul(back,7));
+ bl.setAttribute('x1',b1[0]);bl.setAttribute('y1',b1[1]);bl.setAttribute('x2',b2[0]);bl.setAttribute('y2',b2[1]);
+ $('phase').textContent=ph;$('cue').textContent=cues[ph];
+}
+function frame(now){const dt=(now-last)/1000;last=now;if(playing)t=(t+dt*speed)%total;const[p,i]=pose(t);draw(p,i);requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'Pause':'Play';};
+$('slow').onclick=()=>{speed=speed===1?0.35:1;$('slow').textContent='Slow motion: '+(speed===1?'off':'on');};
+document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;let acc=0;for(let i=1;i<=k;i++)acc+=seq[i][1];t=Math.min(acc,total-0.001);playing=false;$('play').textContent='Play';});
+</script>
+</body>
+</html>
