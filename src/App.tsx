@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { STR_TABLES, missingTables } from './lib/tables';
 import { downloadBasics } from './lib/download';
+import { clearTestData } from './lib/reset';
 import PlateCalc from './PlateCalc';
 import Today from './Today';
 import { BigButton } from './ui/Overlay';
@@ -83,9 +84,34 @@ function Me({ session, online }: { session: Session; online: boolean }) {
       <div className="mt-4">
         <DatabaseCheck online={online} />
       </div>
-      <BigButton tone="ghost" onClick={() => void supabase.auth.signOut()} className="mt-8 w-full">
+      <ClearTestData online={online} />
+      <BigButton tone="ghost" onClick={() => void supabase.auth.signOut()} className="mt-4 w-full">
         Sign out
       </BigButton>
+    </div>
+  );
+}
+
+// Wipe the phone's test workouts and start weights before real training begins.
+function ClearTestData({ online }: { online: boolean }) {
+  const [status, setStatus] = useState<string | null>(null);
+  return (
+    <div className="mt-8">
+      <BigButton
+        tone="ghost"
+        disabled={!online || status === 'working'}
+        onClick={async () => {
+          if (!confirm('Erase every workout, start weight, prep and pain entry on this phone? This cannot be undone.')) return;
+          setStatus('working');
+          const err = await clearTestData();
+          setStatus(err ? `Problem: ${err}` : 'done');
+        }}
+        className="w-full border-plate text-plate"
+      >
+        {!online ? 'Clear test data needs signal' : status === 'working' ? 'Clearing…' : 'Clear test data'}
+      </BigButton>
+      {status === 'done' && <p className="mt-2 text-xl font-black">CLEARED. ALL LIFTS BACK TO NO START WEIGHT.</p>}
+      {status?.startsWith('Problem') && <p className="mt-2 text-xl font-black text-plate">{status}</p>}
     </div>
   );
 }

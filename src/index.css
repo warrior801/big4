@@ -15,10 +15,15 @@
   --color-chalk: #f4f4f2;
 }
 
-/* Rest timer's last 3 seconds: hard red/black flash. */
+/* Rest timer: bright red fading to dark red. */
+.rest-red {
+  background: radial-gradient(ellipse at 30% 20%, #ff2b2b 0%, #d62828 40%, #6e0e0e 100%);
+}
+
+/* Last 3 seconds: hard flash between the red and white. */
 @keyframes flash {
-  0% { background: var(--color-plate); }
-  50% { background: var(--color-ink); }
+  0% { background: #ff2b2b; color: #fff; }
+  50% { background: #fff; color: #a81e1e; }
 }
 
 html,

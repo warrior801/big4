@@ -2,11 +2,13 @@ import { useRef, useState } from 'react';
 import { platesPerSide, sideLabel, type Equipment } from '../engine/plates';
 import BarDrawing from './BarDrawing';
 import Overlay, { BigButton } from './Overlay';
+import Sideways, { useUpright } from './Sideways';
 
 export type ScreenSet = { pct: number; lb: number; reps: number; isTop: boolean; isAmrap: boolean; repsDone?: number | null };
 
-// One set at a time, huge. Swipe or tap the arrows to move up and down the ramp.
-// With onLog it's the gym screen (DONE / MISSED); without, it's view-only (the calculator).
+// One set at a time, huge, laid out sideways around the whole bar. Swipe or tap the arrows
+// to move up and down the ramp. With onLog it's the gym screen (DONE / MISSED); without,
+// it's view-only (the calculator).
 export default function PlatesScreen({
   liftName,
   sets,
@@ -26,7 +28,8 @@ export default function PlatesScreen({
 }) {
   const [i, setI] = useState(Math.min(startIndex, sets.length - 1));
   const [picking, setPicking] = useState<null | { max: number }>(null);
-  const touchX = useRef<number | null>(null);
+  const upright = useUpright();
+  const touch = useRef<{ x: number; y: number } | null>(null);
   const s = sets[i];
   const plates = barbell ? platesPerSide(s.lb, eq) : null;
   const done = s.repsDone !== null && s.repsDone !== undefined;
@@ -40,78 +43,82 @@ export default function PlatesScreen({
   const label = s.isAmrap ? 'As many as you can' : s.isTop ? 'Top set' : s.pct === 0 ? 'Empty bar' : barbell ? `Warm-up · ${s.pct}%` : `Set ${i + 1}`;
 
   return (
-    <Overlay onClose={onClose}>
+    <Sideways className="bg-ink">
       <div
-        className="flex flex-1 flex-col"
-        onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
+        className="flex h-full flex-col"
+        onTouchStart={(e) => (touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY })}
         onTouchEnd={(e) => {
-          if (touchX.current === null) return;
-          const dx = e.changedTouches[0].clientX - touchX.current;
-          if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
-          touchX.current = null;
+          if (!touch.current) return;
+          // Held upright, the screen is turned: a sideways swipe moves the finger down the glass.
+          const along = upright ? e.changedTouches[0].clientY - touch.current.y : e.changedTouches[0].clientX - touch.current.x;
+          if (Math.abs(along) > 50) go(along < 0 ? 1 : -1);
+          touch.current = null;
         }}
       >
-        <p className="text-center text-3xl font-black tracking-wide uppercase">{liftName}</p>
-        <p className={`mt-1 text-center text-xl font-black tracking-widest uppercase ${s.isTop || s.isAmrap ? 'text-plate' : 'text-steel'}`}>{label}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[7cqh] leading-none font-black tracking-wide uppercase">{liftName}</p>
+            <p className={`mt-1 text-[5cqh] leading-none font-black tracking-widest uppercase ${s.isTop || s.isAmrap ? 'text-plate' : 'text-steel'}`}>{label}</p>
+          </div>
+          <button onClick={onClose} className="px-2 text-[5cqh] font-black tracking-widest text-steel uppercase" aria-label="Close">
+            Close
+          </button>
+        </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-2">
-          <p className="text-[32vw] leading-none font-black landscape:text-[22vh]">
+        <div className="flex items-end justify-between gap-4">
+          <p className="text-[30cqh] leading-[0.85] font-black">
             {barbell || s.lb > 0 ? s.lb : 'BW'}
-            {(barbell || s.lb > 0) && <span className="text-[6vw] text-steel landscape:text-[5vh]"> LB</span>}
+            {(barbell || s.lb > 0) && <span className="text-[7cqh] text-steel"> LB</span>}
+            <span className="ml-3 text-[13cqh] text-plate">{s.isAmrap ? 'MAX' : `×${s.reps}`}</span>
           </p>
-          <p className="text-5xl font-black text-plate">{s.isAmrap ? 'MAX REPS' : `× ${s.reps}`}</p>
           {barbell && (
-            <>
-              <div className="mt-4 w-full">
-                <BarDrawing plates={plates ?? []} />
-              </div>
-              <p className="text-center text-5xl font-black">
-                {sideLabel(plates)}
-                {plates && plates.length > 0 && <span className="block text-lg tracking-widest text-steel">PER SIDE</span>}
-              </p>
-            </>
+            <p className="pb-2 text-right text-[9cqh] leading-none font-black">
+              {sideLabel(plates)}
+              {plates && plates.length > 0 && <span className="block text-[4cqh] tracking-widest text-steel">EACH SIDE</span>}
+            </p>
           )}
         </div>
 
-        <div className="mb-3 flex items-center justify-between">
-          <button onClick={() => go(-1)} disabled={i === 0} className="px-4 py-3 text-5xl font-black disabled:opacity-20" aria-label="Previous set">
+        <div className="min-h-0 flex-1 py-2">{barbell && <BarDrawing plates={plates ?? []} />}</div>
+
+        <div className="flex items-center gap-3">
+          <button onClick={() => go(-1)} disabled={i === 0} className="px-2 text-[12cqh] leading-none font-black disabled:opacity-20" aria-label="Previous set">
             ‹
           </button>
           <div className="flex gap-2">
             {sets.map((x, n) => (
-              <span
-                key={n}
-                className={`h-3 w-3 rounded-full ${n === i ? 'bg-chalk' : x.repsDone !== null && x.repsDone !== undefined ? 'bg-plate' : 'bg-line'}`}
-              />
+              <span key={n} className={`h-3 w-3 rounded-full ${n === i ? 'bg-chalk' : x.repsDone !== null && x.repsDone !== undefined ? 'bg-plate' : 'bg-line'}`} />
             ))}
           </div>
-          <button onClick={() => go(1)} disabled={i === sets.length - 1} className="px-4 py-3 text-5xl font-black disabled:opacity-20" aria-label="Next set">
+          <button onClick={() => go(1)} disabled={i === sets.length - 1} className="px-2 text-[12cqh] leading-none font-black disabled:opacity-20" aria-label="Next set">
             ›
           </button>
-        </div>
 
-        {onLog &&
-          (done ? (
-            <div className="mb-4 flex items-center gap-3">
-              <p className="flex-1 text-center text-3xl font-black">DONE · {s.repsDone}</p>
-              <BigButton tone="ghost" onClick={() => setPicking({ max: 20 })}>
-                Change
-              </BigButton>
-            </div>
-          ) : s.isAmrap ? (
-            <BigButton onClick={() => setPicking({ max: 20 })} className="mb-4 min-h-24 text-4xl">
-              Log reps
-            </BigButton>
-          ) : (
-            <div className="mb-4 grid grid-cols-3 gap-3">
-              <BigButton onClick={() => log(s.reps)} className="col-span-2 min-h-24 text-4xl">
-                Done {s.reps}
-              </BigButton>
-              <BigButton tone="ghost" onClick={() => setPicking({ max: barbell ? s.reps - 1 : 20 })} className="min-h-24 text-xl">
-                {barbell ? 'Missed' : 'Other'}
-              </BigButton>
-            </div>
-          ))}
+          <div className="ml-auto flex gap-3">
+            {onLog &&
+              (done ? (
+                <>
+                  <p className="self-center text-[7cqh] font-black">DONE · {s.repsDone}</p>
+                  <BigButton tone="ghost" onClick={() => setPicking({ max: 20 })}>
+                    Change
+                  </BigButton>
+                </>
+              ) : s.isAmrap ? (
+                <BigButton onClick={() => setPicking({ max: 20 })} className="min-h-[18cqh] px-8 text-[7cqh]">
+                  Log reps
+                </BigButton>
+              ) : (
+                <>
+                  <BigButton tone="ghost" onClick={() => setPicking({ max: barbell ? s.reps - 1 : 20 })} className="min-h-[18cqh] text-[5cqh]">
+                    {barbell ? 'Missed' : 'Other'}
+                  </BigButton>
+                  <BigButton onClick={() => log(s.reps)} className="min-h-[18cqh] px-8 text-[8cqh]">
+                    Done {s.reps}
+                  </BigButton>
+                </>
+              ))}
+          </div>
+        </div>
       </div>
 
       {picking && (
@@ -124,7 +131,7 @@ export default function PlatesScreen({
           onClose={() => setPicking(null)}
         />
       )}
-    </Overlay>
+    </Sideways>
   );
 }
 
@@ -132,9 +139,9 @@ export function RepsPicker({ max, onPick, onClose }: { max: number; onPick: (rep
   return (
     <Overlay onClose={onClose}>
       <p className="text-center text-3xl font-black tracking-wide uppercase">Reps done</p>
-      <div className="mt-6 grid flex-1 grid-cols-3 content-start gap-3 overflow-auto pb-4">
+      <div className="mt-4 grid flex-1 grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] content-start gap-3 overflow-auto pb-4">
         {Array.from({ length: max + 1 }, (_, r) => max - r).map((r) => (
-          <BigButton key={r} tone={r === max ? 'plate' : 'ghost'} onClick={() => onPick(r)} className="min-h-24 text-5xl">
+          <BigButton key={r} tone={r === max ? 'plate' : 'ghost'} onClick={() => onPick(r)} className="min-h-20 text-5xl">
             {r}
           </BigButton>
         ))}

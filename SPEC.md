@@ -114,7 +114,7 @@ Six screens, phone layout first. On desktop the same screens sit side by side.
 **Look (decided):** big and bold everywhere, readable at arm's length mid-set. Huge heavy numbers, plate red on the dark tile background, no small grey rows. It should make people look twice.
 
 **Plates screen and weight picker (decided):** two full-screen pop-ups shared across the app.
-- **Plates screen:** one set at a time, huge: the weight, the reps, and a drawing of one side of the bar with each plate labeled. It opens on the set tapped; swipe or tap Next to move up the ramp.
+- **Plates screen:** one set at a time, huge, drawn sideways like the timer: the weight, the reps, and a drawing of the whole bar with the plates on both sides, each labeled. It opens on the set tapped; swipe or tap Next to move up the ramp.
 - **Weight picker:** one huge number with big − / + buttons (5 lb steps, 2.5 once 1.25 plates are in Settings); tap the number to type it. Done opens the plates screen.
 - On Today, tapping a lift goes straight to the plates screen, because the engine already chose the weight. The weight picker is for the plate calculator and day-one calibration, where Cecil chooses the weight.
 
@@ -127,7 +127,8 @@ The gym screen. Opens straight to the next workout.
 - Before day-one calibration exists (step 6), a lift with no top set shows **SET START WEIGHT**, which opens the weight picker.
 - Rest timer starts automatically after each logged set. Default 3 min for ramp sets, 5 min after the top set, both adjustable.
 - **Big timer:** the rest timer fills the whole screen with numbers readable from the bench, with the next set's lift and weight underneath and a "skip rest" button. In the last 3 seconds the screen flashes plate red, then shows "Lift." Tap anywhere to go back to the workout.
-  - **Sideways:** the timer reshapes and gets bigger when the phone is turned. A web app can't force an iPhone sideways, so this needs the phone's rotation lock off; with it on, the timer is still full-screen standing up.
+  - **Sideways, always (decided):** a web app can't turn the iPhone, so the timer is drawn already turned on its side; Cecil turns the phone left to read it. Works with rotation lock on or off.
+  - **Colors (decided):** bright-to-dark red background, bright white numbers. Last 3 seconds flash red and white; time's up shows a white screen with a red LIFT.
   - **Screen stays awake** while the timer runs, so a 5-minute rest doesn't end on a dark screen.
   - **Optional beep** at zero, off by default (iPhones don't let web apps vibrate). It may not play with the phone on silent.
   - The countdown runs from the clock time the set was logged, so it stays right if the phone locks or the app goes to the background.
