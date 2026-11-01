@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
+import { STR_TABLES, missingTables } from './lib/tables';
 
 // Step 1 placeholder: proves install, offline open, and the Supabase login.
 // The real screens (Today, Tracker, ...) replace this from step 4 on.
@@ -36,22 +37,45 @@ export default function App() {
         </p>
       </div>
 
-      {checking ? null : session ? <SignedIn session={session} /> : <SignIn online={online} />}
+      {checking ? null : session ? <SignedIn session={session} online={online} /> : <SignIn online={online} />}
     </main>
   );
 }
 
-function SignedIn({ session }: { session: Session }) {
+function SignedIn({ session, online }: { session: Session; online: boolean }) {
   return (
     <div className="flex w-full flex-col items-center gap-4 rounded-2xl border border-line bg-panel p-6 text-center">
       <p className="text-steel">Connected as</p>
       <p className="font-bold break-all">{session.user.email}</p>
+      <DatabaseCheck online={online} />
       <button
         onClick={() => supabase.auth.signOut()}
         className="mt-2 rounded-xl border border-line px-5 py-3 text-steel active:bg-line"
       >
         Sign out
       </button>
+    </div>
+  );
+}
+
+// Step 2 check: are all twelve str_ tables in Supabase?
+function DatabaseCheck({ online }: { online: boolean }) {
+  const [missing, setMissing] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (online) missingTables().then(setMissing);
+  }, [online]);
+
+  if (!online) return <p className="text-sm text-steel">Database: check needs signal</p>;
+  if (missing === null) return <p className="text-sm text-steel">Database: checking…</p>;
+
+  const ready = STR_TABLES.length - missing.length;
+  return (
+    <div className="text-sm">
+      <p className={missing.length ? 'font-bold text-plate' : 'font-bold text-chalk'}>
+        Database: {ready} of {STR_TABLES.length} tables ready
+      </p>
+      {missing.length > 0 && <p className="mt-1 break-all text-steel">Missing: {missing.join(', ')}</p>}
     </div>
   );
 }

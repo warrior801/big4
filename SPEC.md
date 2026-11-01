@@ -248,7 +248,7 @@ Twelve new tables in the existing Supabase project, all prefixed `str_`, all car
 
 **Not in the database:** the program rules (`program.json`) and the technique guide text (`technique.json`). Both ship with the code and change through Claude Code.
 
-**Sync:** each table has `updated_at` and a client-generated `id` (UUID), so offline rows created on the phone merge cleanly. Last write wins; one user means conflicts are rare.
+**Sync:** each table has `updated_at` and a client-generated `id` (UUID), so offline rows created on the phone merge cleanly. Last write wins; one user means conflicts are rare. Each table also has a `deleted` yes/no column: deleting marks the row instead of removing it, so a delete made offline on the phone reaches the desktop too.
 
 ## Scope, open items, and build order
 

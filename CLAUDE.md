@@ -13,7 +13,8 @@ Cecil's personal strength app: Paul Horn's Radically Simple Strength novice phas
 
 ## Where it stands
 - **Build order:** one step at a time, and stop after each so Cecil can test it on his iPhone.
-- **Step 1 done (2026-10-31):** Vite + React + TypeScript + Tailwind, PWA install with offline open, sign-in to the shared Supabase project. Next: step 2, the twelve `str_` tables.
+- **Step 1 done and tested on the iPhone (2026-10-31):** Vite + React + TypeScript + Tailwind, PWA install, offline open (passed the airplane-mode test), and sign-in to the shared Supabase project, live on Hostinger.
+- **Step 2 built (2026-10-31), waiting on Cecil to run the SQL:** `supabase/schema.sql` creates the twelve `str_` tables with a soft-delete `deleted` column and an own-rows policy. After sign-in the app shows "Database: N of 12 tables ready." The eight lifts get seeded by the app on first sign-in in step 3, not by the SQL.
 
 ## How it's built
 - **Stack:** Vite, React, TypeScript, Tailwind v4 (`@tailwindcss/vite`), `vite-plugin-pwa`. The Archivo font is bundled, so it works offline.
