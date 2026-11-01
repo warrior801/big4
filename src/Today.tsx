@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import program from './program/program.json';
 import prep from './program/prep.json';
+import { CALIBRATION_REPS, firstWeight, lighterWeight, nextWeight } from './engine/calibration';
 import { roundUp } from './engine/plates';
 import { buildRamp, rampFor } from './engine/ramp';
 import { tooSoon, weekStart, type Pull } from './engine/schedule';
@@ -10,6 +11,10 @@ import { primeAudio } from './lib/beep';
 import { syncNow } from './lib/sync';
 import { db, type LiftRow, type LiftStateRow, type SessionRow, type SetRow, type SettingsRow } from './lib/db';
 import {
+  calibrationGood,
+  calibrationMissed,
+  calibrationStart,
+  calibrationWeight,
   discardWorkout,
   engineState,
   equipmentOf,
@@ -26,6 +31,7 @@ import {
   type Pain,
 } from './lib/store';
 import Overlay, { BigButton } from './ui/Overlay';
+import CalibrateScreen from './ui/CalibrateScreen';
 import PlatesScreen from './ui/PlatesScreen';
 import RestTimer from './ui/RestTimer';
 import WeightPicker from './ui/WeightPicker';
@@ -104,7 +110,8 @@ function Preview({ userId, data }: { userId: string; data: Data }) {
   const thisWeek = finished.filter((s) => new Date(s.started_at) >= weekStart(new Date())).length;
   const warnHours = settings?.rest_warning_hours ?? program.schedule.restWarningHours;
   const soon = tooSoon(lastFinish ? new Date(lastFinish) : null, new Date(), warnHours);
-  const ready = plan.lifts.every((l) => !l.needsStart);
+  // Main lifts with no start weight get calibrated in the workout; accessories need one first.
+  const ready = plan.lifts.every((l) => !(l.needsStart && l.lift.kind === 'accessory'));
   const d = new Date();
 
   return (
@@ -130,7 +137,15 @@ function Preview({ userId, data }: { userId: string; data: Data }) {
 
       <div className="flex flex-col gap-3">
         {plan.lifts.map((pl) => (
-          <LiftCard key={pl.lift.id} pl={pl} onOpen={() => (pl.needsStart ? setStarting(pl) : setViewing(pl))} />
+          <LiftCard
+            key={pl.lift.id}
+            pl={pl}
+            calib={pl.needsStart && pl.lift.kind === 'main' ? { firstLb: firstWeight(pl.lift.slug, eq) } : undefined}
+            onOpen={() => {
+              if (!pl.needsStart) setViewing(pl);
+              else if (pl.lift.kind === 'accessory') setStarting(pl);
+            }}
+          />
         ))}
       </div>
 
@@ -138,7 +153,7 @@ function Preview({ userId, data }: { userId: string; data: Data }) {
         disabled={!ready}
         onClick={() => {
           primeAudio();
-          void startWorkout(plan, userId);
+          void startWorkout(plan, userId, eq);
         }}
         className="mt-6 min-h-24 w-full text-4xl"
       >
@@ -176,20 +191,37 @@ function Preview({ userId, data }: { userId: string; data: Data }) {
 
 type Data = { lifts: LiftRow[]; states: LiftStateRow[]; settings: SettingsRow | undefined; sessions: SessionRow[]; sets: SetRow[] };
 
-function LiftCard({ pl, onOpen, progress }: { pl: PlannedLift; onOpen: () => void; progress?: { done: number; total: number } }) {
+// calib: this lift is being calibrated. firstLb before the workout; then sets worked up, then the start.
+type Calib = { firstLb?: number; goodSets?: number; startLb?: number | null };
+
+function LiftCard({ pl, onOpen, progress, calib }: { pl: PlannedLift; onOpen: () => void; progress?: { done: number; total: number }; calib?: Calib }) {
   const top = pl.sets.at(-1);
-  const finished = progress && progress.done === progress.total;
+  const finished = calib ? !!calib.startLb : progress && progress.done === progress.total;
   return (
     <button onClick={onOpen} className={`rounded-3xl border-2 p-5 text-left active:bg-line ${finished ? 'border-plate bg-panel' : 'border-line bg-panel'}`}>
       <div className="flex items-baseline justify-between">
         <p className="text-3xl font-black uppercase">{pl.lift.name}</p>
-        {progress && (
+        {progress && !calib && (
           <p className={`text-2xl font-black ${finished ? 'text-plate' : 'text-steel'}`}>
             {progress.done}/{progress.total}
           </p>
         )}
       </div>
-      {pl.needsStart ? (
+      {calib ? (
+        calib.startLb ? (
+          <p className="mt-1 text-7xl leading-none font-black">
+            {calib.startLb}
+            <span className="ml-2 text-3xl text-plate">START</span>
+          </p>
+        ) : (
+          <>
+            <p className="mt-2 text-4xl font-black text-plate">CALIBRATE{progress ? ' ›' : ' TODAY'}</p>
+            <p className="mt-1 text-xl font-black text-steel">
+              {calib.goodSets ? `${calib.goodSets} GOOD SETS SO FAR` : `WORK UP FROM ${calib.firstLb ?? ''} FOR FIVES`}
+            </p>
+          </>
+        )
+      ) : pl.needsStart ? (
         <p className="mt-2 text-3xl font-black text-plate">SET START WEIGHT ›</p>
       ) : top ? (
         <>
@@ -215,6 +247,7 @@ function Active({ sessionId, userId, onFinished }: { sessionId: string; userId: 
   const lifts = useLiveQuery(() => db.lifts.toArray(), []);
   const prepRows = useLiveQuery(() => db.prepLog.where('session_id').equals(sessionId).toArray(), [sessionId]);
   const settings = useLiveQuery(() => db.settings.toArray().then((r) => r[0]), []);
+  const states = useLiveQuery(() => db.liftState.toArray(), []);
   const [openLift, setOpenLift] = useState<string | null>(null);
   const [rest, setRest] = useState<Rest | null>(() => {
     try {
@@ -236,11 +269,20 @@ function Active({ sessionId, userId, onFinished }: { sessionId: string; userId: 
     }
   }, [rest]);
 
-  if (!session || !sets || !lifts || !prepRows) return null;
+  if (!session || !sets || !lifts || !prepRows || !states) return null;
   const eq = equipmentOf(settings);
   const live = sets.filter((s) => !s.deleted).sort((a, b) => a.set_order - b.set_order);
   const liftIds = [...new Set(live.map((s) => s.lift_id))];
-  const byLift = liftIds.map((lid) => ({ lift: lifts.find((l) => l.id === lid)!, sets: live.filter((s) => s.lift_id === lid) })).filter((x) => x.lift);
+  const byLift = liftIds
+    .map((lid) => {
+      const lift = lifts.find((l) => l.id === lid)!;
+      const ls = live.filter((s) => s.lift_id === lid);
+      // A main lift whose sets in this workout have no top set is being calibrated.
+      const calibrating = lift?.kind === 'main' && ls.every((s) => !s.is_top_set);
+      const st = states.find((s) => s.lift_id === lid);
+      return { lift, sets: ls, calibrating, startLb: st?.top_set_lb === null || st?.top_set_lb === undefined ? null : Number(st.top_set_lb) };
+    })
+    .filter((x) => x.lift);
   const slugs = byLift.map((x) => x.lift.slug);
 
   if (prepRows.length === 0 && stage === 'lifting') {
@@ -265,7 +307,7 @@ function Active({ sessionId, userId, onFinished }: { sessionId: string; userId: 
       </header>
 
       <div className="flex flex-col gap-3">
-        {byLift.map(({ lift, sets: ls }) => (
+        {byLift.map(({ lift, sets: ls, calibrating, startLb }) => (
           <LiftCard
             key={lift.id}
             pl={{
@@ -274,6 +316,7 @@ function Active({ sessionId, userId, onFinished }: { sessionId: string; userId: 
               sets: ls.map((s) => ({ setOrder: s.set_order, pct: 0, lb: Number(s.target_lb), reps: s.target_reps, isTop: s.is_top_set, isAmrap: s.is_amrap })),
             }}
             progress={{ done: ls.filter((s) => s.reps_done !== null).length, total: ls.length }}
+            calib={calibrating ? { goodSets: ls.filter((s) => (s.reps_done ?? 0) >= s.target_reps).length, startLb } : undefined}
             onOpen={() => setOpenLift(lift.id)}
           />
         ))}
@@ -302,7 +345,44 @@ function Active({ sessionId, userId, onFinished }: { sessionId: string; userId: 
         DISCARD WORKOUT
       </button>
 
-      {current && (
+      {current?.calibrating && (
+        <CalibrateScreen
+          liftName={current.lift.name}
+          openLb={(() => {
+            const open = current.sets.find((s) => s.reps_done === null);
+            return open ? Number(open.target_lb) : null;
+          })()}
+          reps={CALIBRATION_REPS}
+          goodLbs={current.sets.filter((s) => (s.reps_done ?? 0) >= s.target_reps).map((s) => Number(s.target_lb))}
+          startLb={current.startLb}
+          step={2 * Math.min(...eq.platesLb)}
+          minLb={eq.barLb}
+          eq={eq}
+          onWeight={(lb) => {
+            const open = current.sets.find((s) => s.reps_done === null);
+            if (open) void calibrationWeight(open.id, lb);
+          }}
+          onGood={() => {
+            primeAudio();
+            const open = current.sets.find((s) => s.reps_done === null);
+            if (!open) return;
+            const next = nextWeight(current.lift.slug, Number(open.target_lb), eq);
+            void calibrationGood(open.id, next);
+            setRest({ endsAt: Date.now() + (settings?.rest_ramp_sec ?? 180) * 1000, next: `${current.lift.name} ${next} × ${CALIBRATION_REPS}` });
+          }}
+          onStart={() => {
+            const open = current.sets.find((s) => s.reps_done === null);
+            if (open) void calibrationStart(open.id);
+          }}
+          onMissed={(reps) => {
+            const open = current.sets.find((s) => s.reps_done === null);
+            if (open) void calibrationMissed(open.id, reps, lighterWeight(current.lift.slug, Number(open.target_lb), eq));
+          }}
+          onClose={() => setOpenLift(null)}
+        />
+      )}
+
+      {current && !current.calibrating && (
         <PlatesScreen
           liftName={current.lift.name}
           sets={current.sets.map((s) => ({
@@ -534,6 +614,7 @@ function Summary({ changes, pains, sessionId, onClose }: SummaryData & { onClose
 
   const line = (c: Change) => {
     const r = c.result;
+    if (c.calibrated) return { big: `${c.before} LB`, small: 'Your start. First real ramp next time, no jump on top' };
     if (r.kind === 'skipped') return { big: 'NOT LOGGED', small: 'No change' };
     const after = r.state.topSetLb;
     if (r.kind === 'accessory') return { big: r.event === 'up' ? `${after} LB` : 'SAME', small: r.event === 'up' ? 'Weight goes up' : 'Same weight, chase the reps' };

@@ -53,6 +53,13 @@
     { "slug": "lte", "name": "Lying triceps extension", "kind": "accessory", "rule": "allSets", "earlyJumpLb": 5, "laterJumpLb": 5 }
   ],
 
+  "calibration": {
+    "_note": "Day-one work-up for sets of five. Deadlift starts at 135 for pulling height; the rest start on the empty bar.",
+    "reps": 5,
+    "startLb": { "deadlift": 135 },
+    "jumpLb": { "squat": 10, "deadlift": 10, "bench": 5, "press": 5 }
+  },
+
   "progression": {
     "topSetReps": 5,
     "earlyJumpSessions": 3,

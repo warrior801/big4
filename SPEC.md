@@ -92,6 +92,13 @@ Horn's minimums are 5 lb on the lower-body lifts and 2.5 lb on bench and press, 
 
 First session for each lift: work up in small jumps for sets of five, starting from the empty bar, until bar speed slows or form slips. Cecil taps "this is my start" and that weight becomes the first top set. Calibration runs over the first two sessions (A covers bench and deadlift, B covers press).
 
+Decided for the build:
+- **Deadlift starts at 135** (a 45 each side, for the right pulling height), not the empty bar; it can be lowered on the first screen.
+- **Suggested next weight:** +10 on squat and deadlift, +5 on bench and press, adjustable with − / + before each set.
+- **Three buttons per set:** GOOD, GO HEAVIER; THIS IS MY START; MISSED / FORM SLIPPED (the last good set becomes the start; with no good set yet, pick a lighter weight).
+- **The start weight is the top set of that lift's first real ramp session**, with no jump on top. Early jumps count from that session.
+- Calibration sets are saved like any other sets, so the history starts on day one. Accessories (from workout 13) still get a start weight from the weight picker.
+
 ### Schedule
 
 Training days are Monday morning, Wednesday morning, and Saturday around noon after the Delta shift. In 1a and 1b, workouts alternate A/B regardless of the day, so each workout rotates through the week. In 1c the layout is fixed: A on Monday and Saturday, B on Wednesday.
