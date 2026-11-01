@@ -111,6 +111,13 @@ Horn's novice phase usually runs three to six months, three to four being more r
 
 Six screens, phone layout first. On desktop the same screens sit side by side.
 
+**Look (decided):** big and bold everywhere, readable at arm's length mid-set. Huge heavy numbers, plate red on the dark tile background, no small grey rows. It should make people look twice.
+
+**Plates screen and weight picker (decided):** two full-screen pop-ups shared across the app.
+- **Plates screen:** one set at a time, huge: the weight, the reps, and a drawing of one side of the bar with each plate labeled. It opens on the set tapped; swipe or tap Next to move up the ramp.
+- **Weight picker:** one huge number with big − / + buttons (5 lb steps, 2.5 once 1.25 plates are in Settings); tap the number to type it. Done opens the plates screen.
+- On Today, tapping a lift goes straight to the plates screen, because the engine already chose the weight. The weight picker is for the plate calculator and day-one calibration, where Cecil chooses the weight.
+
 ### 1. Today
 
 The gym screen. Opens straight to the next workout.
@@ -118,6 +125,11 @@ The gym screen. Opens straight to the next workout.
 - Each lift shows its full ramp (bar, 60–100%) with the weight and the plates per side for every set. Example: 185 lb = 45 + 25 per side; 215 lb = 45 + 35 + 5 per side. Plates load heaviest first.
 - One tap logs a set as done; long-press to enter reps actually hit (0–5).
 - Rest timer starts automatically after each logged set. Default 3 min for ramp sets, 5 min after the top set, both adjustable.
+- **Big timer:** the rest timer fills the whole screen with numbers readable from the bench, with the next set's lift and weight underneath and a "skip rest" button. In the last 3 seconds the screen flashes plate red, then shows "Lift." Tap anywhere to go back to the workout.
+  - **Sideways:** the timer reshapes and gets bigger when the phone is turned. A web app can't force an iPhone sideways, so this needs the phone's rotation lock off; with it on, the timer is still full-screen standing up.
+  - **Screen stays awake** while the timer runs, so a 5-minute rest doesn't end on a dark screen.
+  - **Optional beep** at zero, off by default (iPhones don't let web apps vibrate). It may not play with the phone on silent.
+  - The countdown runs from the clock time the set was logged, so it stays right if the phone locks or the app goes to the background.
 - "Video link" button on each top set (see Video below).
 - A notes field per session (sleep, how the shift went, aches).
 - Finish button closes the session, runs the progression rules, and shows what changes next time.
@@ -163,7 +175,7 @@ A settings-level editor. Cecil changes the practical knobs from his phone; the p
 - **Lift weights:** override any lift's current top-set weight (bar taken, bad day, retest).
 - **Jumps:** change the jump size per lift, or switch a lift to its later jump.
 - **Accessories:** pick chin-ups or lat pulldowns; turn curls on or off. Lying triceps extensions stay on (Horn calls them essential for bench and press).
-- **Rest timers:** ramp-set and top-set defaults.
+- **Rest timers:** ramp-set and top-set defaults, and the beep on or off.
 - **Schedule:** training days, reminder times, rest-warning hours.
 - **Plates:** plates available and bar weight; add 1.25 lb plates when bought.
 - **Protein:** daily target and saved meals.

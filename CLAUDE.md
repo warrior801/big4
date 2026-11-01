@@ -15,7 +15,7 @@ Cecil's personal strength app: Paul Horn's Radically Simple Strength novice phas
 - **Build order:** one step at a time, and stop after each so Cecil can test it on his iPhone.
 - **Step 1 done and tested on the iPhone (2026-10-31):** Vite + React + TypeScript + Tailwind, PWA install, offline open (passed the airplane-mode test), and sign-in to the shared Supabase project, live on Hostinger.
 - **Step 2 done and tested on the iPhone (2026-10-31), "12 of 12 tables ready":** `supabase/schema.sql` creates the twelve `str_` tables with a soft-delete `deleted` column and an own-rows policy. After sign-in the app shows "Database: N of 12 tables ready." The eight lifts get seeded by the app on first sign-in in step 3, not by the SQL.
-- **Step 3 built (2026-10-31), waiting on the phone test:** `src/program/program.json` holds every rule, `src/engine/` runs it (plates, ramp, progression, schedule), and there are 34 tests (`npm test`). On first sign-in, `src/lib/seed.ts` adds the eight lifts, a state row for each, and the settings row. The signed-in screen has a plate calculator that becomes part of the Today screen in step 4.
+- **Step 3 done and tested on the iPhone (2026-10-31), "8 of 8 lifts," plate math checked:** `src/program/program.json` holds every rule, `src/engine/` runs it (plates, ramp, progression, schedule), and there are 34 tests (`npm test`). On first sign-in, `src/lib/seed.ts` adds the eight lifts, a state row for each, and the settings row. The signed-in screen has a plate calculator that becomes part of the Today screen in step 4.
 
 ## How it's built
 - **Stack:** Vite, React, TypeScript, Tailwind v4 (`@tailwindcss/vite`), `vite-plugin-pwa`. The Archivo font is bundled, so it works offline.
@@ -26,6 +26,7 @@ Cecil's personal strength app: Paul Horn's Radically Simple Strength novice phas
 - **Local preview:** `npm run build`, then `npm run preview` (port 4173). The service worker only runs in a built preview, not in `npm run dev`.
 
 ## Rules
+- **Design: big and BOLD, every screen.** Cecil's words: it should make people look twice and ask what he's working with. Huge heavy numbers (Archivo 900), plate red on the dark tile, tap targets sized for chalky hands. Never small grey rows of data.
 - Program logic (phases, ramp, miss rules) goes in `program.json` and changes through chat. Practical settings change in the app's Settings screen.
 - Technique and guide text is written in Cecil's own words. Never copy text from Horn's books.
 - Pounds throughout. Bar 45 lb. VASA plates: 45, 35, 25, 10, 5, 2.5, plus 1.25 fractional plates for bench and press.
