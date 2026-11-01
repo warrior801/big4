@@ -78,12 +78,12 @@ All 5 reps on the top set means weight goes up next time that lift appears.
 | Bench press | +5 lb | +2.5 lb |
 | Press | +5 lb | +2.5 lb |
 
-Horn's minimums are 5 lb on the lower-body lifts and 2.5 lb on bench and press, and he is plain that upper-body lifts stall too soon without small jumps. VASA's smallest plate is 2.5 lb, so **1.25 lb fractional plates in the gym bag are required** for the 2.5 lb jumps. The app suggests when to switch each lift to its later jump.
+Horn's minimums are 5 lb on the lower-body lifts and 2.5 lb on bench and press, and he is plain that upper-body lifts stall too soon without small jumps. VASA's smallest plate is 2.5 lb, so **1.25 lb fractional plates in the gym bag are required** for the 2.5 lb jumps. Early jumps run for the first 3 sessions of each lift after day-one calibration (decided; Horn gives no number), then the lift switches to its later jump on its own. Settings can switch a lift sooner. Until the 1.25 lb plates are added in Settings, a 2.5 lb jump isn't loadable, so the app uses the smallest jump it can load (5 lb).
 
 ### Missed reps (Horn)
 
 1. Miss the top set once: repeat the same weight next time. One bad day changes nothing.
-2. Miss it 2–3 sessions in a row: reset that lift only. Take 10% off the top set, rebuild the ramp from it, and make the top set as many reps as possible, stopping one rep short of a miss.
+2. Miss it 2 sessions in a row (Horn's own example: miss, miss again, reset on the third workout): reset that lift only. Take 10% off the top set, rebuild the ramp from it, and make the top set as many reps as possible, stopping one rep short of a miss.
 3. After a reset, weight keeps going up as long as the top set gets at least 3 reps.
 4. Below 3 again: either a second reset (10–15% off, aiming to beat the rep record from the first reset) or the novice phase is done.
 5. Optional: when a lift appears twice in one week, the second session can be a light day that stops at 90%.
@@ -115,7 +115,7 @@ Six screens, phone layout first. On desktop the same screens sit side by side.
 
 The gym screen. Opens straight to the next workout.
 
-- Each lift shows its full ramp (bar, 60–100%) with the weight and the plates per side for every set. Example: 185 lb = 45 + 25 + 10 + 5 per side.
+- Each lift shows its full ramp (bar, 60–100%) with the weight and the plates per side for every set. Example: 185 lb = 45 + 25 per side; 215 lb = 45 + 35 + 5 per side. Plates load heaviest first.
 - One tap logs a set as done; long-press to enter reps actually hit (0–5).
 - Rest timer starts automatically after each logged set. Default 3 min for ramp sets, 5 min after the top set, both adjustable.
 - "Video link" button on each top set (see Video below).

@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { STR_TABLES, missingTables } from './lib/tables';
+import { ensureSeeded, type SeedResult } from './lib/seed';
+import PlateCalc from './PlateCalc';
 
 // Step 1 placeholder: proves install, offline open, and the Supabase login.
 // The real screens (Today, Tracker, ...) replace this from step 4 on.
@@ -38,6 +40,7 @@ export default function App() {
       </div>
 
       {checking ? null : session ? <SignedIn session={session} online={online} /> : <SignIn online={online} />}
+      {session && <PlateCalc />}
     </main>
   );
 }
@@ -48,6 +51,7 @@ function SignedIn({ session, online }: { session: Session; online: boolean }) {
       <p className="text-steel">Connected as</p>
       <p className="font-bold break-all">{session.user.email}</p>
       <DatabaseCheck online={online} />
+      <LiftsCheck online={online} />
       <button
         onClick={() => supabase.auth.signOut()}
         className="mt-2 rounded-xl border border-line px-5 py-3 text-steel active:bg-line"
@@ -55,6 +59,23 @@ function SignedIn({ session, online }: { session: Session; online: boolean }) {
         Sign out
       </button>
     </div>
+  );
+}
+
+// Step 3 check: the eight lifts are on the account (added on first sign-in).
+function LiftsCheck({ online }: { online: boolean }) {
+  const [result, setResult] = useState<SeedResult | null>(null);
+
+  useEffect(() => {
+    if (online) ensureSeeded().then(setResult);
+  }, [online]);
+
+  if (!online || result === null) return null;
+  if (result.error) return <p className="text-sm text-plate">Lifts: {result.error}</p>;
+  return (
+    <p className="text-sm font-bold">
+      Lifts: {result.lifts} of 8 ready{result.added > 0 && <span className="font-normal text-steel"> ({result.added} just added)</span>}
+    </p>
   );
 }
 

@@ -14,13 +14,15 @@ Cecil's personal strength app: Paul Horn's Radically Simple Strength novice phas
 ## Where it stands
 - **Build order:** one step at a time, and stop after each so Cecil can test it on his iPhone.
 - **Step 1 done and tested on the iPhone (2026-10-31):** Vite + React + TypeScript + Tailwind, PWA install, offline open (passed the airplane-mode test), and sign-in to the shared Supabase project, live on Hostinger.
-- **Step 2 built (2026-10-31), waiting on Cecil to run the SQL:** `supabase/schema.sql` creates the twelve `str_` tables with a soft-delete `deleted` column and an own-rows policy. After sign-in the app shows "Database: N of 12 tables ready." The eight lifts get seeded by the app on first sign-in in step 3, not by the SQL.
+- **Step 2 done and tested on the iPhone (2026-10-31), "12 of 12 tables ready":** `supabase/schema.sql` creates the twelve `str_` tables with a soft-delete `deleted` column and an own-rows policy. After sign-in the app shows "Database: N of 12 tables ready." The eight lifts get seeded by the app on first sign-in in step 3, not by the SQL.
+- **Step 3 built (2026-10-31), waiting on the phone test:** `src/program/program.json` holds every rule, `src/engine/` runs it (plates, ramp, progression, schedule), and there are 34 tests (`npm test`). On first sign-in, `src/lib/seed.ts` adds the eight lifts, a state row for each, and the settings row. The signed-in screen has a plate calculator that becomes part of the Today screen in step 4.
 
 ## How it's built
 - **Stack:** Vite, React, TypeScript, Tailwind v4 (`@tailwindcss/vite`), `vite-plugin-pwa`. The Archivo font is bundled, so it works offline.
 - **Supabase:** the same project as Ironframe (`src/lib/supabase.ts`), with email and password login. The publishable key in the code is fine there. New tables are prefixed `str_`. Never touch Ironframe's tables.
 - **Hosting:** Hostinger, which auto-deploys from `github.com/warrior801/big4` on every push to `main`. The build command is `npm run build`, and the output folder is `dist`.
 - **Icons:** `public/` holds icons generated from `icon-source.png`. The source has **white** corners, not transparent ones, and the script masks them out. To regenerate: `npm i --no-save sharp && npm run icons`. `sharp` is kept out of `package.json` on purpose, so Hostinger's build never has to install a native image library.
+- **Tests:** `npm test` (Vitest) covers every engine rule. Run it before every push that touches `src/engine/` or `program.json`.
 - **Local preview:** `npm run build`, then `npm run preview` (port 4173). The service worker only runs in a built preview, not in `npm run dev`.
 
 ## Rules

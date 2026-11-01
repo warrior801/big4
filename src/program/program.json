@@ -1,0 +1,79 @@
+{
+  "_about": "BIG4 program rules. Logic changes go through chat and Claude Code, never the app. Values marked default in SPEC.md are placeholders; Horn values come from his novice program video and articles.",
+
+  "equipment": {
+    "barLb": 45,
+    "platesLb": [45, 35, 25, 10, 5, 2.5],
+    "_note": "Defaults for a new account. Cecil's own list lives in str_settings and wins. Add 1.25 there when the fractional plates arrive."
+  },
+
+  "subPhases": [
+    { "id": "1a", "fromWorkout": 1, "toWorkout": 12 },
+    { "id": "1b", "fromWorkout": 13, "toWorkout": 24 },
+    { "id": "1c", "fromWorkout": 25, "toWorkout": null }
+  ],
+
+  "workouts": {
+    "_note": "UPPER = bench or press, PULL = chin-up or pulldown (Settings pick). In 1a and 1b, A always benches and B always presses. In 1c the upper lift alternates every session on its own.",
+    "1a": { "A": ["squat", "bench", "deadlift"], "B": ["squat", "press", "deadlift"] },
+    "1b": { "A": ["squat", "bench", "deadlift"], "B": ["squat", "press", "PULL"] },
+    "1c": { "A": ["squat", "UPPER", "curl"], "B": ["deadlift", "UPPER", "PULL", "lte"] },
+    "1cWeekPattern": ["A", "B", "A"],
+    "_1cNote": "Horn's preferred 1c layout: squat twice a week, deadlift once. Chin-ups on day B in 1c is default (confirm in the book)."
+  },
+
+  "ramps": {
+    "main": [
+      { "pct": 0, "reps": 5 },
+      { "pct": 60, "reps": 5 },
+      { "pct": 70, "reps": 5 },
+      { "pct": 80, "reps": 5 },
+      { "pct": 90, "reps": 5 },
+      { "pct": 100, "reps": 5 }
+    ],
+    "deadlift": [
+      { "pct": 60, "reps": 5 },
+      { "pct": 70, "reps": 3 },
+      { "pct": 80, "reps": 2 },
+      { "pct": 90, "reps": 1, "onlyFromTopLb": 300 },
+      { "pct": 100, "reps": 5 }
+    ],
+    "_note": "pct 0 = the empty bar. Horn skips the deadlift's 90% single while the top set is light; 300 lb is a default cut-off.",
+    "lightDayMaxPct": 90
+  },
+
+  "lifts": [
+    { "slug": "squat", "name": "Squat", "kind": "main", "ramp": "main", "earlyJumpLb": 10, "laterJumpLb": 5 },
+    { "slug": "bench", "name": "Bench press", "kind": "main", "ramp": "main", "earlyJumpLb": 5, "laterJumpLb": 2.5 },
+    { "slug": "press", "name": "Press", "kind": "main", "ramp": "main", "earlyJumpLb": 5, "laterJumpLb": 2.5 },
+    { "slug": "deadlift", "name": "Deadlift", "kind": "main", "ramp": "deadlift", "earlyJumpLb": 20, "laterJumpLb": 5 },
+    { "slug": "chinup", "name": "Chin-up", "kind": "accessory", "rule": "firstSet", "earlyJumpLb": 5, "laterJumpLb": 5 },
+    { "slug": "pulldown", "name": "Lat pulldown", "kind": "accessory", "rule": "firstSet", "earlyJumpLb": 5, "laterJumpLb": 5 },
+    { "slug": "curl", "name": "Curl", "kind": "accessory", "rule": "allSets", "earlyJumpLb": 5, "laterJumpLb": 5 },
+    { "slug": "lte", "name": "Lying triceps extension", "kind": "accessory", "rule": "allSets", "earlyJumpLb": 5, "laterJumpLb": 5 }
+  ],
+
+  "progression": {
+    "topSetReps": 5,
+    "earlyJumpSessions": 3,
+    "missesBeforeReset": 2,
+    "resetPct": 10,
+    "secondResetPct": 15,
+    "repFloorAfterReset": 3
+  },
+
+  "accessories": {
+    "sets": 3,
+    "firstSet": { "addWeightAtReps": 10, "repRange": [8, 10] },
+    "allSets": { "addWeightAtReps": 12, "repRange": [8, 12] },
+    "_note": "Accessory jumps of 5 lb and the set counts are default."
+  },
+
+  "schedule": {
+    "trainingDays": ["mon", "wed", "sat"],
+    "restWarningHours": 40,
+    "layoffRepeatAfterDays": 7,
+    "layoffDropAfterDays": 14,
+    "layoffDropPct": 10
+  }
+}
