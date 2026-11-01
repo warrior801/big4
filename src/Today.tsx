@@ -7,6 +7,7 @@ import { buildRamp, rampFor } from './engine/ramp';
 import { tooSoon, weekStart, type Pull } from './engine/schedule';
 import { planWorkout, type PlannedLift } from './engine/workout';
 import { primeAudio } from './lib/beep';
+import { syncNow } from './lib/sync';
 import { db, type LiftRow, type LiftStateRow, type SessionRow, type SetRow, type SettingsRow } from './lib/db';
 import {
   discardWorkout,
@@ -49,7 +50,7 @@ export default function Today({ userId }: { userId: string }) {
     return (
       <Center>
         <p className="text-4xl font-black">GETTING YOUR LIFTS</p>
-        <p className="mt-3 text-xl text-steel">Open BIG4 once with signal so it can download them.</p>
+        <p className="mt-3 text-xl text-steel">Open BIG4 once with signal so it can sync them down.</p>
       </Center>
     );
 
@@ -338,6 +339,7 @@ function Active({ sessionId, userId, onFinished }: { sessionId: string; userId: 
             setRest(null);
             await logPain(sessionId, userId, pains);
             const changes = await finishWorkout(sessionId, notes, eq);
+            void syncNow(); // send the finished workout right away when there's signal
             onFinished({ changes, pains, sessionId });
           }}
         />

@@ -2,8 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { STR_TABLES, missingTables } from './lib/tables';
-import { downloadBasics } from './lib/download';
 import { clearTestData } from './lib/reset';
+import { onSyncStatus, startAutoSync, syncNow, waitingCount, type SyncStatus } from './lib/sync';
 import PlateCalc from './PlateCalc';
 import Today from './Today';
 import { BigButton } from './ui/Overlay';
@@ -15,7 +15,7 @@ export default function App() {
   const [checking, setChecking] = useState(true);
   const [online, setOnline] = useState(navigator.onLine);
   const [tab, setTab] = useState<Tab>('today');
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [sync, setSync] = useState<SyncStatus | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -34,11 +34,10 @@ export default function App() {
     };
   }, []);
 
-  // With signal: make sure the lifts exist and copy them to the phone.
+  // Signed in: keep the phone and Supabase in step (see lib/sync.ts for when it runs).
   const userId = session?.user.id;
-  useEffect(() => {
-    if (userId && online) downloadBasics().then(setDownloadError);
-  }, [userId, online]);
+  useEffect(() => (userId ? startAutoSync() : undefined), [userId]);
+  useEffect(() => onSyncStatus(setSync), []);
 
   if (checking) return null;
   if (!session) return <SignIn online={online} />;
@@ -46,11 +45,11 @@ export default function App() {
   return (
     <div className="mx-auto max-w-xl pb-28">
       {!online && <p className="pt-3 text-center text-lg font-black tracking-widest text-plate">NO SIGNAL · SAVING ON THE PHONE</p>}
-      {downloadError && <p className="pt-3 text-center text-lg font-black text-plate">Download problem: {downloadError}</p>}
+      {sync?.state === 'error' && <p className="pt-3 text-center text-lg font-black text-plate">SYNC PROBLEM · SEE ME</p>}
 
       {tab === 'today' && <Today userId={session.user.id} />}
       {tab === 'plates' && <PlateCalc />}
-      {tab === 'me' && <Me session={session} online={online} />}
+      {tab === 'me' && <Me session={session} online={online} sync={sync} />}
 
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-line bg-ink"
@@ -72,7 +71,7 @@ export default function App() {
   );
 }
 
-function Me({ session, online }: { session: Session; online: boolean }) {
+function Me({ session, online, sync }: { session: Session; online: boolean; sync: SyncStatus | null }) {
   return (
     <div className="pb-6">
       <header className="pt-6 pb-4">
@@ -81,7 +80,8 @@ function Me({ session, online }: { session: Session; online: boolean }) {
       </header>
       <p className="text-xl font-black tracking-widest text-steel">SIGNED IN AS</p>
       <p className="text-2xl font-black break-all">{session.user.email}</p>
-      <div className="mt-4">
+      <SyncPanel sync={sync} online={online} />
+      <div className="mt-6">
         <DatabaseCheck online={online} />
       </div>
       <ClearTestData online={online} />
@@ -92,7 +92,41 @@ function Me({ session, online }: { session: Session; online: boolean }) {
   );
 }
 
-// Wipe the phone's test workouts and start weights before real training begins.
+function SyncPanel({ sync, online }: { sync: SyncStatus | null; online: boolean }) {
+  const [waiting, setWaiting] = useState<number | null>(null);
+  useEffect(() => {
+    void waitingCount().then(setWaiting);
+  }, [sync]);
+
+  const ago = (iso: string) => {
+    const min = Math.round((Date.now() - Date.parse(iso)) / 60_000);
+    return min < 1 ? 'JUST NOW' : min < 60 ? `${min} MIN AGO` : `${Math.round(min / 60)} H AGO`;
+  };
+  const line =
+    sync?.state === 'syncing'
+      ? 'SYNCING…'
+      : !online
+        ? 'NO SIGNAL · SAVED ON THE PHONE'
+        : sync?.state === 'error'
+          ? 'SYNC PROBLEM'
+          : sync?.lastOk
+            ? `SYNCED ${ago(sync.lastOk)}`
+            : 'NOT SYNCED YET';
+
+  return (
+    <div className="mt-6 rounded-3xl border-2 border-line p-5">
+      <p className="text-xl font-black tracking-widest text-steel">SYNC</p>
+      <p className={`text-3xl font-black ${sync?.state === 'error' ? 'text-plate' : ''}`}>{line}</p>
+      {waiting !== null && waiting > 0 && <p className="mt-1 text-xl font-black text-plate">{waiting} CHANGES WAITING TO SEND</p>}
+      {sync?.state === 'error' && <p className="mt-1 text-lg font-bold break-words text-steel">{sync.message}</p>}
+      <BigButton tone="ghost" disabled={!online || sync?.state === 'syncing'} onClick={() => void syncNow()} className="mt-4 w-full">
+        Sync now
+      </BigButton>
+    </div>
+  );
+}
+
+// Erase test workouts and start weights, on Supabase and this phone, before real training begins.
 function ClearTestData({ online }: { online: boolean }) {
   const [status, setStatus] = useState<string | null>(null);
   return (
@@ -101,7 +135,7 @@ function ClearTestData({ online }: { online: boolean }) {
         tone="ghost"
         disabled={!online || status === 'working'}
         onClick={async () => {
-          if (!confirm('Erase every workout, start weight, prep and pain entry on this phone? This cannot be undone.')) return;
+          if (!confirm('Erase every workout, start weight, prep and pain entry, on this phone and in Supabase? This cannot be undone.')) return;
           setStatus('working');
           const err = await clearTestData();
           setStatus(err ? `Problem: ${err}` : 'done');
